@@ -13,8 +13,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Services\UserService;
 use App\Http\Requests\StorePatientRequest;
+use App\Http\Resources\ProviderAvailabilityResource;
+use App\Http\Resources\ProviderAvailabilitySlotResource;
+use App\Http\Resources\UpcomingAppointmentResource;
 use App\Models\Provider;
+use App\Models\ProviderAvailability;
+use App\Models\ProviderAvailabilitySlot;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class AppointmentController extends Controller
 {
@@ -163,6 +169,26 @@ class AppointmentController extends Controller
             return $this->sendResponse([], 'Appointment deleted successfully!');
         } catch (Exception $e) {
             return $this->sendError('Failed to delete appointment.', ['error' => $e->getMessage()]);
+        }
+    }
+
+
+    public function upcoming_appointments()
+    {
+        try {
+
+            $today = Carbon::now()->toDateString();
+            $appointments = Appointment::with(['provider', 'patient'])
+                ->whereDate('appointment_date', '>=', $today)
+                ->orderBy('appointment_date', 'asc')
+                ->get();
+
+            return $this->sendResponse(
+                UpcomingAppointmentResource::collection($appointments),
+                'Upcoming availability slots retrieved successfully.'
+            );
+        } catch (Exception $e) {
+            return $this->sendError('Failed to retrieve upcoming availability slots.', ['error' => $e->getMessage()]);
         }
     }
 }

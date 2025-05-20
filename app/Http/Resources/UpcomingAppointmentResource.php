@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ProviderAvailabilitySlotResource extends JsonResource
+class UpcomingAppointmentResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -14,12 +14,9 @@ class ProviderAvailabilitySlotResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-
         return [
-            'day_of_week' => $this->day_of_week,
-            'start_time' => $this->start_time,
-            'end_time' => $this->end_time,
-            'date' => $this->date,
+            
+            'patient_name' =>$this->patient->user->first_name,    
         ];
     }
 }

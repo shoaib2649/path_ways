@@ -28,4 +28,8 @@ class Provider extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+    public function patient()
+    {
+        return $this->hasMany(Patient::class);
+    }
 }

@@ -34,6 +34,7 @@ class PatientController extends Controller
 
     public function store(StorePatientRequest $request)
     {
+        
         DB::beginTransaction();
         try {
             // Create the User
@@ -54,7 +55,7 @@ class PatientController extends Controller
                 // 'image' => $request->image,
                 // 'module_level' => $request->module_level,
                 // 'qualification' => $request->qualification,
-                'type' => $request->clientType,
+                'type' => $request->patient_type,
                 'referred_by' => $request->referred_by,
                 'status' => $request->status,
                 'wait_list' => $request->wait_list,

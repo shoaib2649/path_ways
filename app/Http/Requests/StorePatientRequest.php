@@ -31,6 +31,7 @@ class StorePatientRequest extends FormRequest
             'google_id' => 'nullable|string',
             // 'password' => 'nullable|string|min:6',
             'date_of_birth' => 'nullable|date',
+            'patient_type' => 'required|string',
 
             // Patient fields
             // 'provider_id' => 'nullable|exists:providers,id',

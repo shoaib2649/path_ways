@@ -34,4 +34,8 @@ class ProviderAvailability extends Model
     {
         return $this->hasMany(ProviderAvailabilitySlot::class, 'provider_availability_id');
     }
+    public function provider()
+    {
+        return $this->belongsTo(Provider::class);
+    }
 }
