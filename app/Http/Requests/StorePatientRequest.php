@@ -29,7 +29,7 @@ class StorePatientRequest extends FormRequest
             'full_name' => 'nullable|string|max:255',
             // 'email' => 'required|email|unique:users,email',
             'google_id' => 'nullable|string',
-            // 'password' => 'nullable|string|min:6',
+            'password' => 'nullable|string|min:6',
             'date_of_birth' => 'nullable|date',
             'patient_type' => 'required|string',
 
@@ -51,6 +51,8 @@ class StorePatientRequest extends FormRequest
             'group_appointments' => 'nullable|boolean',
             'individual_appointments' => 'nullable|boolean',
             'location' => 'nullable|string',
+
+            
         ];
     }
 }

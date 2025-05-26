@@ -24,12 +24,6 @@ class ProviderAvailability extends Model
         'day_of_week' => 'array',
     ];
 
-
-    public function services()
-    {
-        return $this->belongsToMany(Service::class, 'provider_availability_service', 'provider_availability_id', 'service_id');
-    }
-
     public function slots()
     {
         return $this->hasMany(ProviderAvailabilitySlot::class, 'provider_availability_id');

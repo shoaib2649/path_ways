@@ -17,12 +17,12 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-
+        
         $validator = Validator::make($request->all(), [
             'email'    => 'required|email',
             'password' => 'required',
         ]);
-
+        
         if ($validator->fails()) {
             return $this->sendError('Validation Error.', $validator->errors());
         }
@@ -31,7 +31,7 @@ class AuthController extends Controller
             $full_name = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
 
             $token =  $user->createToken('auth_token')->plainTextToken;
-
+            
             $role = UserRole::from($user->user_role); // Convert string to Enum
 
             // Initialize IDs

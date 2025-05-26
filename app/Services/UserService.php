@@ -25,7 +25,7 @@ class UserService
                 'email' => $data['email'] ?? null,
 
                 'google_id' => $data['google_id'] ?? null,
-                // 'password' => bcrypt($data['password']),
+                'password' => isset($data['password']) ? bcrypt($data['password']) : null,
                 'subscribe_status' => $data['subscribe_status'] ?? null,
                 'phone' => $data['phone'] ?? null,
                 'address' => $data['address'] ?? null,

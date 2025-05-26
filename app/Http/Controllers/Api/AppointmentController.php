@@ -96,6 +96,8 @@ class AppointmentController extends Controller
                 'provider_id' => $request->provider_id,
                 'start_time' => $request->start_time,
                 'end_time' => $request->end_time,
+                'is_therapy' => $request->is_therapy,
+                'is_assessment' => $request->is_assessment,
                 'appointment_date' => $request->appointment_date,
                 'title' => $request->title,
                 'type' => $request->type,

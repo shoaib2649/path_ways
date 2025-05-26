@@ -24,6 +24,9 @@ class Appointment extends Model
         'resizable_before_start',
         'resizable_after_end',
         'draggable',
+        'is_therapy',
+        'is_assessment',
+
     ];
     public function provider()
     {
@@ -33,5 +36,4 @@ class Appointment extends Model
     {
         return $this->belongsTo(Patient::class);
     }
-    
 }

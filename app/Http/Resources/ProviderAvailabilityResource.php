@@ -17,12 +17,12 @@ class ProviderAvailabilityResource extends JsonResource
         return [
             'id' => $this->id,
             'provider_id' => $this->provider_id,
+            'provider_name' => $this->provider->user->first_name . ' ' . $this->provider->user->last_name,
             'title' => $this->title,
             'type' => $this->type,
             'location' => $this->location,
             'recurrence' => $this->recurrence,
             'slots' => ProviderAvailabilitySlotResource::collection($this->whenLoaded('slots')),
-            'services' => ServiceResource::collection($this->whenLoaded('services')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

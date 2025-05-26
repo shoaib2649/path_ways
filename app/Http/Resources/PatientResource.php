@@ -49,6 +49,8 @@ class PatientResource extends JsonResource
             // 'password' => $this->password,
             // 'middle_name' => $this->middle_name,
 
+            
+
 
         ];
     }

@@ -43,7 +43,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/set-availability', [ProviderAvailabilityController::class, 'setAvailability']);
     Route::get('/get-availability', [ProviderAvailabilityController::class, 'getAvailability']);
+    
     Route::get('/check-availability', [ProviderAvailabilityController::class, 'checkAvailability']);
+    Route::patch('/provider/availability/{id}', [ProviderAvailabilityController::class, 'updateAvailability']);
+
     Route::get('/check-all-availability', [ProviderAvailabilityController::class, 'getAllProvidersAvailability']);
 
     Route::apiResource('patients', PatientController::class);

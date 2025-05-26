@@ -21,6 +21,8 @@ class AppointmentResource extends JsonResource
             'appointment_date' => $this->appointment_date,
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
+            'is_therapy' => $this->is_therapy,
+            'is_assessment' => $this->is_assessment,
             'title' => $this->title,
             'type' => $this->type,
             'description' => $this->description,

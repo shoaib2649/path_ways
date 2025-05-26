@@ -17,6 +17,11 @@ class UpcomingAppointmentResource extends JsonResource
         return [
             
             'patient_name' =>$this->patient->user->first_name,    
+            'appointment_date' =>$this->appointment_date,    
+            'start_time' =>$this->start_time,    
+            'end_time' =>$this->end_time,    
+            'is_therapy' =>$this->is_therapy,    
+            'is_assessment' =>$this->is_assessment,    
         ];
     }
 }
