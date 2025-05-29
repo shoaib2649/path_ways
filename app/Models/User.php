@@ -57,4 +57,12 @@ class User extends Authenticatable
     {
         return $this->hasOne(Provider::class);
     }
+    public function scheduler()
+    {
+        return $this->hasOne(Scheduler::class);
+    }
+    public function biller()
+    {
+        return $this->hasOne(Biller::class);
+    }
 }

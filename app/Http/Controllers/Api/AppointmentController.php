@@ -34,62 +34,45 @@ class AppointmentController extends Controller
     public function index(Request $request)
     {
         try {
-            // $providerId = $request->query('provider_id', Auth::id()); // Use query param or logged-in user
-            $providerId = Provider::where('user_id', Auth::id())->value('id');
+            $user = Auth::user();
+            $providerId = Provider::where('user_id', $user->id)->value('id');
 
-
-            if (!$providerId) {
-                return $this->sendError('Provider ID is required or user is not authenticated.', [], 401);
+            if ($providerId) {
+                $appointments = Appointment::where('provider_id', $providerId)
+                    ->with(['patient.user', 'provider'])
+                    ->get();
+            } else {
+                $appointments = Appointment::with(['patient.user', 'provider'])->get();
             }
-            $appointments = Appointment::where('provider_id', $providerId)->with(['patient.user', 'provider'])->get();
-            return $this->sendResponse(AppointmentResource::collection($appointments), 'Appointments retrieved successfully.');
+
+            return $this->sendResponse(
+                AppointmentResource::collection($appointments),
+                'Appointments retrieved successfully.'
+            );
         } catch (Exception $e) {
             return $this->sendError('Failed to retrieve appointments.', ['error' => $e->getMessage()]);
         }
     }
 
+
     public function store(Request $request)
     {
-        // dd($request->all());
         DB::beginTransaction();
         try {
-            // Step 1: Determine the patient ID
-            // if ($request->has('patient_id')) {
-            //     // Patient already exists, use existing ID
-            //     $patientId = $request->patient_id;
-            // } 
-            // else {
-            //     // Step 2a: Create user (for patient)
-            //     $data = $request->all();
-            //     $data['user_role'] = UserRole::Patient;
+            $overlap = Appointment::where('provider_id', $request->provider_id)
+                ->whereDate('appointment_date', $request->appointment_date)
+                ->where(function ($query) use ($request) {
+                    $query->whereBetween('start_time', [$request->start_time, $request->end_time])
+                        ->orWhereBetween('end_time', [$request->start_time, $request->end_time])
+                        ->orWhere(function ($q) use ($request) {
+                            $q->where('start_time', '<=', $request->start_time)
+                                ->where('end_time', '>=', $request->end_time);
+                        });
+                })->exists();
 
-            //     $user = $this->userService->createUser($data); // assuming this returns a User model
-
-            //     // Step 2b: Create patient
-            //     $patient = Patient::create([
-            //         'user_id' => $user->id,
-            //         'provider_id' => $request->provider_id,
-            //         'mr' => $request->mr,
-            //         'suffix' => $request->suffix,
-            //         'social_security_number' => $request->social_security_number,
-            //         'blood_score' => $request->blood_score,
-            //         'lifestyle_score' => $request->lifestyle_score,
-            //         'supplement_medication_score' => $request->supplement_medication_score,
-            //         'physical_vital_sign_score' => $request->physical_vital_sign_score,
-            //         'image' => $request->image,
-            //         'module_level' => $request->module_level,
-            //         'qualification' => $request->qualification,
-            //         'provider_name' => $request->provider_name,
-            //         'status' => $request->status,
-            //         'wait_list' => $request->wait_list,
-            //         'group_appointments' => $request->group_appointments,
-            //         'individual_appointments' => $request->individual_appointments,
-            //         'location' => $request->location,
-            //     ]);
-
-            //     $patientId = $patient->id;
-            // }
-
+            if ($overlap) {
+                return $this->sendError(['message' => 'Appointment time overlaps with an existing appointment'], 409);
+            }
             // Step 3: Create appointment with resolved patient ID
             $appointment = Appointment::create([
                 'patient_id' => $request->patient_id,

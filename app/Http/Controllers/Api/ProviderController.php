@@ -127,10 +127,19 @@ class ProviderController extends Controller
     public function destroy(string $id)
     {
         $provider = Provider::find($id);
+
         if (!$provider) {
             return $this->sendError('Provider not found.');
         }
+
+        $user = $provider->user; 
+
         $provider->delete();
-        return $this->sendResponse(null, 'Provider deleted successfully');
+
+        if ($user) {
+            $user->delete();
+        }
+
+        return $this->sendResponse([], 'Provider deleted successfully!');
     }
 }

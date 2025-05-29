@@ -21,19 +21,9 @@ use SebastianBergmann\Diff\Exception;
 
 class ProviderAvailabilityController extends Controller
 {
-    public function getAvailability()
-    {
-
-        try {
-            $availabilities = ProviderAvailability::with(['slots'])->get();
-            return $this->sendResponse(ProviderAvailabilityResource::collection($availabilities), 'Availabilities retrieved successfully.');
-        } catch (Exception $e) {
-            return $this->sendError('Failed to retrieve availabilities.', ['error' => $e->getMessage()]);
-        }
-    }
 
 
-    // 1. Set Availability
+    // 1. add the new Availability
     public function setAvailability(Request $request)
     {
 
@@ -108,6 +98,22 @@ class ProviderAvailabilityController extends Controller
             ], 500);
         }
     }
+    // Get all the provider Availability and authenticated provider availablity
+    public function getAllProvidersAvailability()
+    {
+        try {
+            $user = Auth::user();
+            $providerId = Provider::where('user_id', $user->id)->value('id');
+            if ($providerId) {
+                $availabilities = ProviderAvailability::where('provider_id', $providerId)->with(['slots'])->get();
+            } else {
+                $availabilities = ProviderAvailability::with(['slots'])->get();
+            }
+            return $this->sendResponse(ProviderAvailabilityResource::collection($availabilities), 'Availabilities retrieved successfully.');
+        } catch (Exception $e) {
+            return $this->sendError('Failed to retrieve availabilities.', ['error' => $e->getMessage()]);
+        }
+    }
 
     // **2. Check Provider Availability**
     public function checkAvailability(Request $request)
@@ -132,27 +138,104 @@ class ProviderAvailabilityController extends Controller
             return $this->sendError('Failed to retrieve availabilities.', ['error' => $e->getMessage()]);
         }
     }
+
+    // Update the provider availability
+    // public function updateAvailability(Request $request, $id)
+    // {
+    //     try {
+    //         // $validated = $request->validate([
+    //         //     'title' => 'sometimes|required|string|max:255',
+    //         //     'type' => 'sometimes|required|in:in_person,telehealth',
+    //         //     'location' => 'nullable|string|max:255',
+    //         //     'recurrence' => 'nullable|string|max:255',
+    //         //     'slots.*.*.start_time' => 'required_with:slots|date_format:H:i',
+    //         //     'slots.*.*.end_time' => 'required_with:slots|date_format:H:i',
+    //         // ]);
+
+    //         // $providerId = Provider::where('user_id', Auth::id())->value('id');
+    //         $user = Auth::user();
+    //         $providerId = Provider::where('user_id', $user->id)->value('id');   
+    //         if ($providerId) {
+    //             $availability = ProviderAvailability::where('id', $id)
+    //                 ->where('provider_id', $providerId)
+    //                 ->first();
+
+    //             // return response()->json(['message' => 'Unauthorized', 'error' => 'Provider not found.'], 403);
+    //         } else {
+    //             $availability = ProviderAvailability::where('id', $id)
+    //                 ->where('provider_id', $request->provider_id)
+    //                 ->first();
+    //                 // dd($availability);
+    //             // return response()->json(['message' => 'Unauthorized', 'error' => 'Provider not found.'], 403);
+    //         }
+    //         if (!$availability) {
+    //             return response()->json(['message' => 'Availability not found.'], 404);
+    //         }
+
+    //         DB::beginTransaction();
+    //         $availability->update($request->only(['title', 'type', 'location', 'recurrence']));
+
+    //         if ($request->has('slots')) {
+    //             // Delete old slots
+    //             ProviderAvailabilitySlot::where('provider_availability_id', $availability->id)->delete();
+
+    //             // Create new slots
+    //             foreach ($request->slots as $day => $timeSlots) {
+    //                 foreach ($timeSlots as $slot) {
+    //                     ProviderAvailabilitySlot::create([
+    //                         'provider_availability_id' => $availability->id,
+    //                         'day_of_week' => $day,
+    //                         'start_time' => $slot['start_time'],
+    //                         'end_time' => $slot['end_time'],
+    //                     ]);
+    //                 }
+    //             }
+    //         }
+
+    //         DB::commit();
+
+    //         return response()->json(['message' => 'Availability updated successfully.']);
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         \Log::error('Availability update error: ' . $e->getMessage());
+
+    //         return response()->json([
+    //             'message' => 'Failed to update availability.',
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+
     public function updateAvailability(Request $request, $id)
     {
+        $validated = $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'type' => 'sometimes|required|in:in_person,telehealth',
+            'location' => 'nullable|string|max:255',
+            'recurrence' => 'nullable|string|max:255',
+            'slots.*.*.start_time' => 'required_with:slots|date_format:H:i',
+            'slots.*.*.end_time' => 'required_with:slots|date_format:H:i',
+        ]);
+
         try {
-            $validated = $request->validate([
-                'title' => 'sometimes|required|string|max:255',
-                'type' => 'sometimes|required|in:in_person,telehealth',
-                'location' => 'nullable|string|max:255',
-                'recurrence' => 'nullable|string|max:255',
-                'slots.*.*.start_time' => 'required_with:slots|date_format:H:i',
-                'slots.*.*.end_time' => 'required_with:slots|date_format:H:i',
-            ]);
+            $user = Auth::user();
+            $providerId = Provider::where('user_id', $user->id)->value('id');
 
-            $providerId = Provider::where('user_id', Auth::id())->value('id');
+            if ($providerId) {
+                // If the logged-in user is a provider
+                $availability = ProviderAvailability::where('id', $id)
+                    ->where('provider_id', $providerId)
+                    ->first();
+            } else {
+                // If the user is not a provider (admin or other role)
+                if (!$request->has('provider_id')) {
+                    return response()->json(['message' => 'Provider ID is required for this operation.'], 422);
+                }
 
-            if (!$providerId) {
-                return response()->json(['message' => 'Unauthorized', 'error' => 'Provider not found.'], 403);
+                $availability = ProviderAvailability::where('id', $id)
+                    ->where('provider_id', $request->provider_id)
+                    ->first();
             }
-
-            $availability = ProviderAvailability::where('id', $id)
-                ->where('provider_id', $providerId)
-                ->first();
 
             if (!$availability) {
                 return response()->json(['message' => 'Availability not found.'], 404);
@@ -160,8 +243,10 @@ class ProviderAvailabilityController extends Controller
 
             DB::beginTransaction();
 
+            // Update availability
             $availability->update($request->only(['title', 'type', 'location', 'recurrence']));
 
+            // Update slots if provided
             if ($request->has('slots')) {
                 // Delete old slots
                 ProviderAvailabilitySlot::where('provider_availability_id', $availability->id)->delete();
@@ -195,39 +280,40 @@ class ProviderAvailabilityController extends Controller
 
 
 
-    public function getAllProvidersAvailability()
-    {
-        $providerRoleIds = User::where('user_role', 'provider')->pluck('id');
-        $providers = Provider::whereIn('id', $providerRoleIds)->orderBy('created_at', 'DESC')->get();
-        $data = $providers->map(function ($provider) {
-            $today = Carbon::now()->dayOfWeek; // Get current day of the week (0 = Sunday, 6 = Saturday)
-            $currentTime = Carbon::now()->format('H:i'); // Get current time in HH:MM format
 
-            // Check if provider has availability for today
-            $availability = ProviderAvailability::where('provider_id', $provider->id)
-                ->where('day', $today)
-                ->where('start_time', '<=', $currentTime)
-                ->where('end_time', '>', $currentTime)
-                ->exists();
-            // Check if there are any exceptions today
-            $hasException = ProviderException::where('provider_id', $provider->id)
-                ->whereDate('date', Carbon::today())
-                ->where('start_time', '<=', $currentTime)
-                ->where('end_time', '>', $currentTime)
-                ->exists();
+    // public function getAllProvidersAvailability()
+    // {
+    //     $providerRoleIds = User::where('user_role', 'provider')->pluck('id');
+    //     $providers = Provider::whereIn('id', $providerRoleIds)->orderBy('created_at', 'DESC')->get();
+    //     $data = $providers->map(function ($provider) {
+    //         $today = Carbon::now()->dayOfWeek; // Get current day of the week (0 = Sunday, 6 = Saturday)
+    //         $currentTime = Carbon::now()->format('H:i'); // Get current time in HH:MM format
 
-            // Provider is available if scheduled and has no exception
-            $isAvailable = $availability && !$hasException;
+    //         // Check if provider has availability for today
+    //         $availability = ProviderAvailability::where('provider_id', $provider->id)
+    //             ->where('day', $today)
+    //             ->where('start_time', '<=', $currentTime)
+    //             ->where('end_time', '>', $currentTime)
+    //             ->exists();
+    //         // Check if there are any exceptions today
+    //         $hasException = ProviderException::where('provider_id', $provider->id)
+    //             ->whereDate('date', Carbon::today())
+    //             ->where('start_time', '<=', $currentTime)
+    //             ->where('end_time', '>', $currentTime)
+    //             ->exists();
 
-            return [
-                'provider_id' => $provider->id,
-                'name' => $provider->first_name . ' ' . $provider->last_name,
-                'isAvailable' => $isAvailable
-            ];
-        });
+    //         // Provider is available if scheduled and has no exception
+    //         $isAvailable = $availability && !$hasException;
 
-        return response()->json($data, 200);
-    }
+    //         return [
+    //             'provider_id' => $provider->id,
+    //             'name' => $provider->first_name . ' ' . $provider->last_name,
+    //             'isAvailable' => $isAvailable
+    //         ];
+    //     });
+
+    //     return response()->json($data, 200);
+    // }
 
     // public function list_options()
     // {

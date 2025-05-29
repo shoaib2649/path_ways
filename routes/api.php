@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\InsuranceProviderController;
 use App\Http\Controllers\Api\ListOptionController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\EventController;
+use App\Http\Controllers\Api\SchedulerController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -42,8 +43,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     Route::post('/set-availability', [ProviderAvailabilityController::class, 'setAvailability']);
-    Route::get('/get-availability', [ProviderAvailabilityController::class, 'getAvailability']);
-    
+    Route::get('/get-availability', [ProviderAvailabilityController::class, 'getAllProvidersAvailability']);
+
     Route::get('/check-availability', [ProviderAvailabilityController::class, 'checkAvailability']);
     Route::patch('/provider/availability/{id}', [ProviderAvailabilityController::class, 'updateAvailability']);
 
@@ -51,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('patients', PatientController::class);
     Route::apiResource('providers', ProviderController::class);
+    Route::apiResource('schedulers', SchedulerController::class);
     Route::apiResource('billers', BillerController::class);
     // Dropdown List Options
     Route::get('/list/options', [ListOptionController::class, 'list_options']);

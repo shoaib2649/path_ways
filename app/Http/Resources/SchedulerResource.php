@@ -5,14 +5,14 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class BillerResource extends JsonResource
+class SchedulerResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
      *
      * @return array<string, mixed>
      */
-    public function toArray(Request $request): array
+    public function toArray($request): array
     {
         return [
             'id' => $this->id,
@@ -20,8 +20,9 @@ class BillerResource extends JsonResource
             'last_name' => $this->user->last_name ?? null,
             'full_name' => trim(($this->user->first_name ?? '') . ' ' . ($this->user->last_name ?? '')),
             'email' => $this->user->email,
-            'department' => $this->department,
-            'billing_code' => $this->billing_code,
+            // 'specialization' => $this->specialization,
+            // 'notes' => $this->notes,
+            // 'created_at' => $this->created_at,
         ];
     }
 }

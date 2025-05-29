@@ -88,10 +88,19 @@ class BillerController extends Controller
     public function destroy(string $id)
     {
         $biller = Biller::find($id);
+
         if (!$biller) {
             return $this->sendError('Biller not found.');
         }
+
+        $user = $biller->user; 
+
         $biller->delete();
-        return $this->sendResponse(null, 'Biller deleted successfully');
+
+        if ($user) {
+            $user->delete();
+        }
+
+        return $this->sendResponse([], 'Biller deleted successfully!');
     }
 }

@@ -34,7 +34,7 @@ class PatientController extends Controller
 
     public function store(StorePatientRequest $request)
     {
-        
+
         DB::beginTransaction();
         try {
             // Create the User
@@ -139,10 +139,18 @@ class PatientController extends Controller
     public function destroy(string $id)
     {
         $patient = Patient::find($id);
+
         if (!$patient) {
             return $this->sendError('Patient not found.');
         }
+
+        $user = $patient->user; 
         $patient->delete();
+
+        if ($user) {
+            $user->delete();
+        }
+
         return $this->sendResponse([], 'Patient deleted successfully!');
     }
 }
