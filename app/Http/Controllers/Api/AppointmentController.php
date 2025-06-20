@@ -21,10 +21,12 @@ use App\Models\ProviderAvailability;
 use App\Models\ProviderAvailabilitySlot;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
+use App\Traits\SendsSpruceMessages;
 
 class AppointmentController extends Controller
 {
-
+    use SendsSpruceMessages;
     protected $userService;
 
     public function __construct(UserService $userService)
@@ -36,10 +38,10 @@ class AppointmentController extends Controller
         try {
             $user = Auth::user();
             $providerId = Provider::where('user_id', $user->id)->value('id');
-
             if ($providerId) {
+
                 $appointments = Appointment::where('provider_id', $providerId)
-                    ->with(['patient.user', 'provider'])
+                    ->with(['patient.user', 'provider', 'modifier'])
                     ->get();
             } else {
                 $appointments = Appointment::with(['patient.user', 'provider'])->get();
@@ -70,12 +72,17 @@ class AppointmentController extends Controller
                         });
                 })->exists();
 
+
             if ($overlap) {
                 return $this->sendError(['message' => 'Appointment time overlaps with an existing appointment'], 409);
             }
+
+            // Unique color for each provider
+            $proivder_id = Appointment::where('provider_id', $request->provider_id)->first();
             // Step 3: Create appointment with resolved patient ID
             $appointment = Appointment::create([
                 'patient_id' => $request->patient_id,
+                'cpt_code'  => $request->cpt_code,
                 'provider_id' => $request->provider_id,
                 'start_time' => $request->start_time,
                 'end_time' => $request->end_time,
@@ -87,7 +94,7 @@ class AppointmentController extends Controller
                 'location' => $request->location,
                 'repeat_type' => $request->repeat_type,
                 'description' => $request->description,
-                'color_primary' => $request->color_primary,
+                'color_primary' => $proivder_id->color_primary ?? '#C5ECFD',
                 'color_secondary' => $request->color_secondary,
                 'actions' => $request->actions,
                 'all_day' => $request->all_day ?? false,
@@ -95,8 +102,33 @@ class AppointmentController extends Controller
                 'resizable_after_end' => $request->resizable_after_end ?? false,
                 'draggable' => $request->draggable ?? false,
             ]);
+            $contactId = $appointment->patient->external_contact_id;
+            // Get the contact's conversations
+            $response = Http::withToken(env('SPRUCE_API_KEY'))
+                ->get("https://api.sprucehealth.com/v1/contacts/{$contactId}/conversations");
 
-            // Step 4: Commit the transaction
+            $conversations = $response->json();
+            $convoList = $conversations['conversations'] ?? [];
+            if (!empty($convoList) && isset($convoList[0]['id'])) {
+                $conversationId = $convoList[0]['id'];
+
+                // When appointment is updated
+                $data = $this->sendSpruceUpdateSmsMessage(
+                    $conversationId,
+                    'appointment_created',
+                    [
+                        'start_time' => Carbon::parse($appointment->start_time)->format('Y-m-d H:i'),
+                        'end_time'   => Carbon::parse($appointment->end_time)->format('H:i'),
+                    ]
+                );
+
+                Log::info('Successful Spruce conversation', ['conversationId' => $conversationId, 'data' => $data]);
+            } else {
+                Log::error('Failed to retrieve Spruce conversation', ['response' => $conversations]);
+            }
+
+
+
             DB::commit();
             return $this->sendResponse(new AppointmentResource($appointment), 'Appointment created successfully!');
         } catch (Exception $e) {
@@ -125,7 +157,9 @@ class AppointmentController extends Controller
             $appointment = Appointment::findOrFail($id);
 
             $appointment->update([
+                'cpt_code'  => $request->cpt_code,
                 'start_time' => $request->start_time,
+                'status'      => $request->status,
                 'end_time' => $request->end_time,
                 'appointment_date' => $request->appointment_date,
                 'title' => $request->title,
@@ -138,6 +172,39 @@ class AppointmentController extends Controller
                 'resizable_after_end' => $request->resizable_after_end ?? false,
                 'draggable' => $request->draggable ?? false,
             ]);
+            Appointment::where('provider_id', $appointment->provider_id)
+                ->update([
+                    'color_primary' => $request->color_primary,
+                ]);
+
+
+            // After update, send SMS
+            $contactId = $appointment->patient->external_contact_id;
+            // Get the contact's conversations
+            $response = Http::withToken(env('SPRUCE_API_KEY'))
+                ->get("https://api.sprucehealth.com/v1/contacts/{$contactId}/conversations");
+
+            $conversations = $response->json();
+            $convoList = $conversations['conversations'] ?? [];
+            if (!empty($convoList) && isset($convoList[0]['id'])) {
+                $conversationId = $convoList[0]['id'];
+                // When appointment is updated
+                $data = $this->sendSpruceUpdateSmsMessage(
+                    $conversationId,
+                    'appointment_updated',
+                    [
+                        'start_time' => Carbon::parse($appointment->start_time)->format('Y-m-d H:i'),
+                        'end_time'   => Carbon::parse($appointment->end_time)->format('H:i'),
+                    ]
+                );
+
+                Log::info('Successful Spruce conversation', ['conversationId' => $conversationId, 'data' => $data]);
+            } else {
+                Log::error('Failed to retrieve Spruce conversation', ['response' => $conversations]);
+            }
+
+
+
 
             return $this->sendResponse(new AppointmentResource($appointment), 'Appointment updated successfully!');
         } catch (Exception $e) {
@@ -174,6 +241,26 @@ class AppointmentController extends Controller
             );
         } catch (Exception $e) {
             return $this->sendError('Failed to retrieve upcoming availability slots.', ['error' => $e->getMessage()]);
+        }
+    }
+
+    public function patient_appointment_details($id)
+    {
+        // dd($id);
+
+
+        // return response()->json([
+        //     'success' => true,
+        //     'data' => $appointments
+        // ]);
+        try {
+            $appointments = Appointment::with('patient.user')->where('patient_id', $id)->get();
+            return $this->sendResponse(
+                AppointmentResource::collection($appointments),
+                'Appointments retrieved successfully.'
+            );
+        } catch (Exception $e) {
+            return $this->sendError('Appointment not found.', ['error' => $e->getMessage()]);
         }
     }
 }

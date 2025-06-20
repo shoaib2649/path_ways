@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Enum\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Biller;
+use App\Models\OperationAndDirector;
 use App\Models\Patient;
 use App\Models\Provider;
 use App\Models\Scheduler;
+use App\Models\TrainingAndHiring;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
@@ -41,6 +43,8 @@ class AuthController extends Controller
             $provider_id = null;
             $scheduler_id = null;
             $biller_id = null;
+            $traning_hiring_id = null;
+            $operational_director_id = null;
 
             // Check if user is a patient
             $patient = Patient::where('user_id', $user->id)->first();
@@ -61,6 +65,14 @@ class AuthController extends Controller
             if ($biller) {
                 $biller_id =  $biller->id;
             }
+            $traning_hiring = TrainingAndHiring::where('user_id', $user->id)->first();
+            if ($traning_hiring) {
+                $traning_hiring_id =   $traning_hiring->id;
+            }
+            $operational_director = OperationAndDirector::where('user_id', $user->id)->first();
+            if ($operational_director) {
+                $operational_director_id =   $operational_director->id;
+            }
 
 
             $data = [
@@ -72,8 +84,10 @@ class AuthController extends Controller
                 'provider_id' => $provider_id,
                 'scheduler_id' => $scheduler_id,
                 'biller_id' => $biller_id,
-                'operational_director_id' => $user->id,
-                'training_and_hiring' => $user->id,
+                'operational_director_id' => $operational_director_id,
+                'training_and_hiring_id' =>   $traning_hiring_id,
+                // 'training_and_hiring' => $user->id,
+                // '$operational_director_id' => $biller_id,
             ];
 
             return $this->sendResponse($data, 'User login successfully.');

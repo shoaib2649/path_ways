@@ -132,7 +132,7 @@ class ProviderController extends Controller
             return $this->sendError('Provider not found.');
         }
 
-        $user = $provider->user; 
+        $user = $provider->user;
 
         $provider->delete();
 
@@ -142,4 +142,5 @@ class ProviderController extends Controller
 
         return $this->sendResponse([], 'Provider deleted successfully!');
     }
+  
 }

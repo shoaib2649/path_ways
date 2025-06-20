@@ -8,6 +8,8 @@ class Appointment extends Model
 {
     protected $fillable = [
         'patient_id',
+        'cpt_code',
+        'status',
         'provider_id',
         'appointment_date',
         'start_time',
@@ -35,5 +37,11 @@ class Appointment extends Model
     public function patient()
     {
         return $this->belongsTo(Patient::class);
+    }
+
+
+    public function modifier()
+    {
+        return $this->belongsTo(Modifier::class, 'cpt_code', 'cpt_code');
     }
 }

@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use App\Models\Patient;
 
 class StorePatientRequest extends FormRequest
 {
@@ -21,38 +23,34 @@ class StorePatientRequest extends FormRequest
      */
     public function rules(): array
     {
+        $externalId = $this->route('patient'); // Corrected for apiResource binding
+        $userId = optional(Patient::where('external_contact_id', $externalId)->first())->user_id;
+
         return [
-            // User fields
-            'mrn' => 'nullable|string',
-            'first_name' => 'nullable|string|max:255',
-            'last_name' => 'nullable|string|max:255',
-            'full_name' => 'nullable|string|max:255',
-            // 'email' => 'required|email|unique:users,email',
-            'google_id' => 'nullable|string',
-            'password' => 'nullable|string|min:6',
-            'date_of_birth' => 'nullable|date',
-            'patient_type' => 'required|string',
+            'emailAddresses' => 'required|array|min:1',
+            'emailAddresses.*.value' => 'required|email',
+            'emailAddresses.0.value' => [
+                'required',
+                'email',
+                Rule::unique('users', 'email')->ignore($userId ?? 0),
+            ],
 
-            // Patient fields
-            // 'provider_id' => 'nullable|exists:providers,id',
-            'mr' => 'nullable|string',
-            'suffix' => 'nullable|string',
-            'social_security_number' => 'nullable|string',
-            'blood_score' => 'nullable|numeric',
-            'lifestyle_score' => 'nullable|numeric',
-            'supplement_medication_score' => 'nullable|numeric',
-            'physical_vital_sign_score' => 'nullable|numeric',
-            'image' => 'nullable|string',
-            'module_level' => 'nullable|string',
-            'qualification' => 'nullable|string',
-            // 'provider_name' => 'required|string',
-            'status' => 'nullable|string',
-            'wait_list' => 'nullable|boolean',
-            'group_appointments' => 'nullable|boolean',
-            'individual_appointments' => 'nullable|boolean',
-            'location' => 'nullable|string',
 
-            
+            'phoneNumbers' => 'required|array|min:1',
+            'phoneNumbers.*.value' => 'required|string',
+
+            'givenName' => 'required|string',
+            'familyName' => 'required|string',
+
+            'dateOfBirth' => 'required|date',
+            'gender' => 'required|in:male,female,other',
+            'provider_id' => 'required|exists:providers,id',
+
+            // 'caregivers' => 'nullable|array',
+            // 'caregivers.*.dateOfBirth' => 'required|string',
+            // 'caregivers.*.email' => 'required|string',
+            // 'caregivers.*.firstName' => 'nullable|string',
+            // 'caregivers.*.lastName' => 'nullable|string',
         ];
     }
 }

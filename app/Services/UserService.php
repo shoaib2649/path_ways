@@ -33,11 +33,11 @@ class UserService
                 'postal_code' => $data['postal_code'] ?? null,
                 'country' => $data['country'] ?? null,
                 'gender' => $data['gender'] ?? null,
-                'age' => $data['age'] ?? null,
-                'is_active' => $data['is_active'] ?? null,
-                'profile_image' => $data['profile_image'] ?? null,
-                'bio' => $data['bio'] ?? null,
-                'social_media' => $data['social_media'] ?? null,
+                // 'age' => $data['age'] ?? null,
+                // 'is_active' => $data['is_active'] ?? null,
+                // 'profile_image' => $data['profile_image'] ?? null,
+                // 'bio' => $data['bio'] ?? null,
+                // 'social_media' => $data['social_media'] ?? null,
             ]);
 
             return $user;

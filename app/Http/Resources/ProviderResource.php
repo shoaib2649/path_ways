@@ -35,9 +35,11 @@ class ProviderResource extends JsonResource
             // User
             'first_name' => $this->user->first_name ?? null,
             'last_name' => $this->user->last_name ?? null,
-            'full_name' => $this->user->full_name ?? null,
+            'full_name' => isset($this->user->first_name, $this->user->last_name)
+                ? "{$this->user->first_name} {$this->user->last_name}"
+                : ($this->user->first_name ?? $this->user->last_name ?? null),
             // 'user' => new UserResource($this->whenLoaded('user')), // assuming you want to include user info
-          
+
         ];
     }
 }

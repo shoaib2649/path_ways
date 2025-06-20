@@ -18,7 +18,7 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
-    protected $fillable = ['prefix', 'first_name', 'middle_name', 'last_name', 'full_name', 'name', 'email', 'google_id', 'email_verified_at', 'password', 'user_role', 'subscribe_status', 'phone', 'address', 'state', 'postal_code', 'country', 'date_of_birth', 'gender', 'age', 'is_active', 'last_login_at', 'profile_image', 'bio', 'social_media', 'city'];
+    protected $fillable = ['prefix', 'first_name', 'middle_name','family_name','last_name', 'full_name', 'name', 'email', 'google_id', 'email_verified_at', 'password', 'user_role', 'subscribe_status', 'phone', 'address', 'state', 'postal_code', 'country', 'date_of_birth', 'gender', 'age', 'is_active', 'last_login_at', 'profile_image', 'bio', 'social_media', 'city'];
 
 
     /**
@@ -43,11 +43,6 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-
-    // public function patient()
-    // {
-    //     return $this->hasOne(Patient::class, 'user_id');
-    // }
     public function patient()
     {
         return $this->hasOne(Patient::class);
@@ -64,5 +59,13 @@ class User extends Authenticatable
     public function biller()
     {
         return $this->hasOne(Biller::class);
+    }
+    public function training_hiring()
+    {
+        return $this->hasOne(TrainingAndHiring::class);
+    }
+    public function operatiional_director()
+    {
+        return $this->hasOne(OperationAndDirector::class);
     }
 }
