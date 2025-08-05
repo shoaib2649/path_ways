@@ -23,6 +23,7 @@ class Provider extends Model
         'doctor_notes',
         'consultation_fee',
         'profile_slug',
+        'colour',
     ];
     public function user()
     {
@@ -31,5 +32,17 @@ class Provider extends Model
     public function patient()
     {
         return $this->hasMany(Patient::class);
+    }
+    public function availabilities()
+    {
+        return $this->hasMany(ProviderAvailability::class);
+    }
+    public function notes()
+    {
+        return $this->hasMany(Note::class, 'provider_id', 'id');
+    }
+    public function modifierColors()
+    {
+        return $this->hasMany(ProviderModifierColor::class);
     }
 }

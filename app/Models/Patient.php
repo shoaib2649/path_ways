@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Patient extends Model
 {
-    protected $fillable = ['mr', 'patient_add_from_spruce', 'genderIdentity', 'mrn', 'user_id', 'spruce_link', 'provider_id', 'external_contact_id', 'suffix', 'type', 'social_security_number', 'blood_score', 'lifestyle_score', 'supplement_medication_score', 'physical_vital_sign_score', 'wait_list', 'image', 'module_level', 'qualification', 'provider_name', 'status', 'location', 'group_appointments', 'individual_appointments', 'referred_by'];
+    protected $fillable = ['mr', 'partner_given_name', 'partner_family_name', 'patient_add_from_spruce', 'genderIdentity', 'mrn', 'user_id', 'spruce_link', 'provider_id', 'external_contact_id', 'suffix', 'type', 'social_security_number', 'blood_score', 'lifestyle_score', 'supplement_medication_score', 'physical_vital_sign_score', 'wait_list', 'image', 'module_level', 'qualification', 'provider_name', 'status', 'location', 'group_appointments', 'individual_appointments', 'referred_by', 'insurance_payer', 'groupId', 'memberId'];
     // In Patient.php model
     protected $casts = [
         'patient_add_from_spruce' => 'boolean',
@@ -15,6 +15,10 @@ class Patient extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
     }
     public function provider()
     {

@@ -13,5 +13,4 @@ class ProviderAvailabilitySlot extends Model
     {
         return $this->belongsTo(ProviderAvailability::class);
     }
-    
 }

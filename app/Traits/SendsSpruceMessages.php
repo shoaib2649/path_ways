@@ -8,14 +8,16 @@ use Carbon\Carbon;
 
 trait SendsSpruceMessages
 {
-    public function sendSpruceUpdateSmsMessage(string $phoneNumber, ?string $templateKey): void
+    public function sendSpruceUpdateSmsMessage(string $phoneNumber, ?string $templateKey = null, array $placeholders = []): void
+
     {
         if (!$phoneNumber || !$templateKey) {
             Log::warning('SMS not sent. Missing phone number or message key.');
             return;
         }
 
-        $message = getMessageTemplate($templateKey);
+        $message = getMessageTemplate($templateKey, $placeholders);
+        // dd($message);
 
         $smsPayload = [
             'destination' => [
@@ -41,6 +43,7 @@ trait SendsSpruceMessages
 
         if ($response->successful()) {
             Log::info('Spruce SMS sent successfully to ' . $phoneNumber);
+            Log::info('Spruce message sent ' . $message);
         } else {
             Log::error('Spruce SMS failed', [
                 'phone' => $phoneNumber,

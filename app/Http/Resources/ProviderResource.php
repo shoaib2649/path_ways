@@ -31,6 +31,7 @@ class ProviderResource extends JsonResource
             'doctor_notes' => $this->doctor_notes,
             'consultation_fee' => $this->consultation_fee,
             'profile_slug' => $this->profile_slug,
+            'colour'     => $this->colour,
 
             // User
             'first_name' => $this->user->first_name ?? null,
@@ -38,6 +39,15 @@ class ProviderResource extends JsonResource
             'full_name' => isset($this->user->first_name, $this->user->last_name)
                 ? "{$this->user->first_name} {$this->user->last_name}"
                 : ($this->user->first_name ?? $this->user->last_name ?? null),
+            'slots' => $this->availabilities->pluck('slots')->flatten()->map(function ($slot) {
+                return [
+                    'id' => $slot->id,
+                    'start_time' => $slot->start_time,
+                    'end_time' => $slot->end_time,
+                    'day_of_week' => $slot->day_of_week ?? null,
+                ];
+            }),
+
             // 'user' => new UserResource($this->whenLoaded('user')), // assuming you want to include user info
 
         ];

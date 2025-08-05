@@ -9,8 +9,10 @@ class Appointment extends Model
     protected $fillable = [
         'patient_id',
         'cpt_code',
+        'fees',
         'status',
         'provider_id',
+        'trainee_id',
         'appointment_date',
         'start_time',
         'end_time',
@@ -28,20 +30,39 @@ class Appointment extends Model
         'draggable',
         'is_therapy',
         'is_assessment',
+        'modifier_1',
+        'modifier_2',
+        'modifier_3',
+        'modifier_4',
 
     ];
     public function provider()
     {
         return $this->belongsTo(Provider::class);
     }
+
+    public function trainee()
+    {
+        return $this->belongsTo(TrainingAndHiring::class, 'trainee_id', 'id');
+    }
     public function patient()
     {
         return $this->belongsTo(Patient::class);
     }
-
-
+    public function note()
+    {
+        return $this->hasOne(Note::class);
+    }
     public function modifier()
     {
-        return $this->belongsTo(Modifier::class, 'cpt_code', 'cpt_code');
+        return $this->hasMany(Modifier::class);
+    }
+
+
+    public function modifiers()
+    {
+        return $this->belongsToMany(Modifier::class, 'appointment_modifiers')
+            ->withPivot(['fee', 'modifier_1', 'modifier_2', 'modifier_3', 'modifier_4'])
+            ->withTimestamps();
     }
 }

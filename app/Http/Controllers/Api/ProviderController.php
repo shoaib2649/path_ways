@@ -8,8 +8,12 @@ use App\Http\Resources\ProviderResource;
 use App\Models\Provider;
 use App\Models\User;
 use App\Http\Requests\StoreProviderRequest;
+use App\Models\Scheduler;
+use App\Models\TrainingAndHiring;
 use Illuminate\Support\Facades\DB;
 use App\Services\UserService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ProviderController extends Controller
 {
@@ -24,11 +28,24 @@ class ProviderController extends Controller
     /**
      * Display a listing of the resource.
      */
+
     public function index()
     {
+        $user = Auth::user();
+        // Check if user has "provider" role
+        if ($user->user_role == 'provider') {
+            $provider = Provider::with('user', 'availabilities.slots')->where('user_id', $user->id)->first();
+            if (!$provider) {
+                return $this->sendError('Provider not found', 404);
+            }
+            return $this->sendResponse(new ProviderResource($provider), 'Your Provider Profile');
+        }
+
+        // If not provider, return all providers
         $providers = Provider::with('user')->get();
-        return $this->sendResponse(ProviderResource::collection($providers), 'Provider Data');
+        return $this->sendResponse(ProviderResource::collection($providers), 'All Providers');
     }
+
 
     /**
      * Store a newly created resource in storage.
@@ -142,5 +159,86 @@ class ProviderController extends Controller
 
         return $this->sendResponse([], 'Provider deleted successfully!');
     }
-  
+
+    // public function change_provider_status(Request $request, $id)
+    // {
+    //     DB::beginTransaction();
+
+    //     try {
+    //         $provider = Provider::find($id);
+
+    //         if (!$provider) {
+    //             return $this->sendError('Provider not found.', [], 404);
+    //         }
+
+    //         $provider->update([
+    //             'colour' => $request->input('colour')
+    //         ]);
+
+    //         DB::commit();
+
+    //         return $this->sendResponse([
+    //             'id' => $provider->id,
+    //             'colour' => $provider->colour,
+    //         ], 'Provider colour updated successfully.');
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+
+    //         return $this->sendError('Failed to update provider colour.', ['error' => $e->getMessage()]);
+    //     }
+    // }
+    public function change_provider_status(Request $request)
+    {
+        DB::beginTransaction();
+
+        try {
+            $user = Auth::user();
+
+            if (!$user) {
+                return $this->sendError('Unauthorized: No user logged in.', [], 401);
+            }
+
+            $colour = $request->input('colour');
+
+            if (!$colour) {
+                return $this->sendError('Color is required.', [], 422);
+            }
+
+            $updatedModel = null;
+
+            switch ($user->user_role) {
+                case 'provider':
+                    $updatedModel = Provider::where('user_id', $user->id)->first();
+                    break;
+                case 'scheduler':
+                    $updatedModel = Scheduler::where('user_id', $user->id)->first();
+                    break;
+                case 'training_and_hiring':
+                    $updatedModel = TrainingAndHiring::where('user_id', $user->id)->first();
+                    break;
+
+                default:
+                    return $this->sendError('Your role is not allowed to update color.', [], 403);
+            }
+
+            if (!$updatedModel) {
+                return $this->sendError('User model not found.', [], 404);
+            }
+
+            $updatedModel->update([
+                'colour' => $colour,
+            ]);
+
+            DB::commit();
+
+            return $this->sendResponse([
+                'id' => $updatedModel->id,
+                'colour' => $updatedModel->colour,
+            ], 'Colour updated successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return $this->sendError('Failed to update colour.', ['error' => $e->getMessage()]);
+        }
+    }
 }

@@ -45,12 +45,16 @@ class ModifierSeeder extends Seeder
             ["value" => "90839", "label" => "90839 HW Crisis"],
         ];
 
+        $dummyFees = [60, 75, 90, 100, 120,60,95,40]; // Example fees
+
         foreach ($modifiers as $item) {
-            Modifier::create([
-                'cpt_code' => is_numeric($item['value']) ? $item['value'] : null,
-                'description' => $item['label'],
-                'fees' => null,
-            ]);
+            Modifier::updateOrCreate(
+                ['cpt_code' => is_numeric($item['value']) ? $item['value'] : null],
+                [
+                    'description' => $item['label'],
+                    'fees' => $dummyFees[array_rand($dummyFees)],
+                ]
+            );
         }
     }
 }

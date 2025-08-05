@@ -93,7 +93,7 @@ class SchedulerController extends Controller
         $scheduler->delete();
 
         if ($user) {
-            $user->delete(); 
+            $user->delete();
         }
 
         return $this->sendResponse([], 'Scheduler deleted successfully!');

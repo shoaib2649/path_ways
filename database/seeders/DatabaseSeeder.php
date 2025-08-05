@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             ListOptionsSeeder::class,
             ModifierSeeder::class,
+            RoleSeeder::class,
 
         ]);
     }

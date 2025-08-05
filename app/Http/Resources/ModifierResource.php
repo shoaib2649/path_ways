@@ -19,6 +19,9 @@ class ModifierResource extends JsonResource
             'cpt_code'    => $this->cpt_code,
             'description' => $this->description,
             'fees'        => $this->fees,
+            'colour'        => $this->colour,
+
+
         ];
     }
 }

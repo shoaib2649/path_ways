@@ -9,6 +9,7 @@ use App\Models\TrainingAndHiring;
 use App\Models\User;
 use App\Enum\UserRole;
 use App\Services\UserService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class TrainingAndHiringController extends Controller
@@ -23,30 +24,100 @@ class TrainingAndHiringController extends Controller
     /**
      * Display a listing of the resource.
      */
+    // old code
+    // public function index()
+
+    // {
+    //     $items = TrainingAndHiring::with('user', 'availabilities.slots')->get();
+    //     return $this->sendResponse(TrainingAndHiringResource::collection($items), 'Training and Hiring records retrieved successfully');
+    // }
     public function index()
     {
-        $items = TrainingAndHiring::with('user')->get();
-        return $this->sendResponse(TrainingAndHiringResource::collection($items), 'Training and Hiring records retrieved successfully');
+
+        $user = Auth::user();
+
+        // dd($user->user_role);
+        // If the user has the 'training_and_hiring' role (adjust as per your enum or constant)
+        if ($user->user_role == 'training_and_hiring') {
+            $training_hiring = TrainingAndHiring::with(['user', 'availabilities.slots'])->where('user_id', $user->id)->first();
+
+            if (!$training_hiring) {
+                return $this->sendError('Training and Hiring profile not found', 404);
+            }
+
+            return $this->sendResponse(new TrainingAndHiringResource($training_hiring), 'Your Training and Hiring Profile');
+        }
+
+        // If not, return all training and hiring profiles
+        $training_hiring = TrainingAndHiring::with(['user', 'availabilities.slots'])->get();
+        return $this->sendResponse(
+            TrainingAndHiringResource::collection($training_hiring),
+            'All Training and Hiring records retrieved successfully'
+        );
     }
+
 
     /**
      * Store a newly created resource in storage.
      */
+    // old code 
+    // public function store(StoreTrainingAndHiringRequest $request)
+    // {
+    //     DB::beginTransaction();
+    //     try {
+    //         // Create the User
+    //         $data = $request->all();
+    //         $data['user_role'] = UserRole::TH; // Adjust role as needed
+    //         $user = $this->userService->createUser($data);
+
+    //         // Create the TrainingAndHiring record
+    //         $item = TrainingAndHiring::create([
+    //             'user_id' => $user->id,
+    //             'description' => $request->description ?? '',
+    //             'title' => $request->title ?? '',
+
+    //         ]);
+
+    //         DB::commit();
+
+    //         return $this->sendResponse(new TrainingAndHiringResource($item), 'Training and Hiring record created successfully!');
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+
+    //         return $this->sendError('Something went wrong.', ['error' => $e->getMessage()]);
+    //     }
+    // }
+    // updated code 
+
     public function store(StoreTrainingAndHiringRequest $request)
     {
         DB::beginTransaction();
+
         try {
-            // Create the User
+            // Step 1: Create the user first
             $data = $request->all();
-            $data['user_role'] = UserRole::TH; // Adjust role as needed
+            $data['user_role'] = UserRole::TH; // Training & Hiring role
             $user = $this->userService->createUser($data);
 
-            // Create the TrainingAndHiring record
+            // Step 2: Now create the TrainingAndHiring record with the user_id
             $item = TrainingAndHiring::create([
                 'user_id' => $user->id,
-                'description' => $request->description ?? '',
+                'specialization' => $request->specialization,
+                'license_number' => $request->license_number,
+                'license_expiry_date' => $request->license_expiry_date,
+                'experience_years' => $request->experience_years,
+                'education' => $request->education,
+                'certifications' => $request->certifications,
+                'clinic_name' => $request->clinic_name,
+                'clinic_address' => $request->clinic_address,
+                'available_days' => $request->available_days,
+                'available_time' => $request->available_time,
+                'is_verified' => $request->is_verified ?? false,
+                'doctor_notes' => $request->doctor_notes,
+                'consultation_fee' => $request->consultation_fee,
+                'profile_slug' => $request->profile_slug,
                 'title' => $request->title ?? '',
-
+                'description' => $request->description ?? '',
             ]);
 
             DB::commit();
@@ -58,6 +129,7 @@ class TrainingAndHiringController extends Controller
             return $this->sendError('Something went wrong.', ['error' => $e->getMessage()]);
         }
     }
+
 
     /**
      * Display the specified resource.
@@ -108,7 +180,7 @@ class TrainingAndHiringController extends Controller
                 'social_media'
             ]);
             $userData['user_role'] = $userData['user_role'] ?? UserRole::TH; // Adjust role as needed
-            $user=$this->userService->updateUser($user, $userData);
+            $user = $this->userService->updateUser($user, $userData);
             // Update the TrainingAndHiring record
             $item->update([
                 // 'admin_id' => $request->admin_id ?? '',

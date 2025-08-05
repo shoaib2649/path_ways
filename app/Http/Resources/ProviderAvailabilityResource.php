@@ -17,7 +17,14 @@ class ProviderAvailabilityResource extends JsonResource
         return [
             'id' => $this->id,
             'provider_id' => $this->provider_id,
-            'provider_name' => $this->provider->user->first_name . ' ' . $this->provider->user->last_name,
+            'training_id' => $this->training_id,
+            'provider_name' => $this->provider?->user
+                ? $this->provider->user->first_name . ' ' . $this->provider->user->last_name
+                : null,
+            'trainee_name' => $this->training?->user
+                ? $this->training->user->first_name . ' ' . $this->training->user->last_name
+                : null,
+
             'title' => $this->title,
             'type' => $this->type,
             'location' => $this->location,

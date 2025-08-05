@@ -22,14 +22,14 @@ class StoreNoteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'appointment_id' => 'required|exists:appointments,id',
-            'patient_id' => 'required|exists:patients,id',
-            'encounter' => 'required|string',
-            'cpt_code' => 'nullable|string',
-            'cpt_description' => 'nullable|string',
-            'fees' => 'nullable|numeric',
-            'sign' => 'nullable|string',
-            'status' => 'in:pending,complete',
+            // 'appointment_id' => 'required|exists:appointments,id',
+            // 'patient_id' => 'required|exists:patients,id',
+            // // 'encounter' => 'required|string',
+            // 'cpt_code' => 'nullable|string',
+            // 'cpt_description' => 'nullable|string',
+            // 'fees' => 'nullable|numeric',
+            // 'sign' => 'nullable|string',
+            // 'status' => 'in:pending,complete',
         ];
     }
 }

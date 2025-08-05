@@ -9,6 +9,7 @@ use App\Http\Requests\StorePatientRequest;
 use App\Models\CareGiver;
 use App\Models\Patient;
 use App\Models\Provider;
+use App\Models\Role;
 use App\Models\SpruceNote;
 use App\Models\User;
 use App\Services\UserService;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Traits\SendsSpruceMessages;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 class PatientController extends Controller
@@ -92,10 +94,17 @@ class PatientController extends Controller
                 'user_role' => UserRole::Patient,
             ]);
 
+            // $role = Role::where('name', UserRole::Patient)->first();
+            // if ($role) {
+            //     $user->roles()->attach($role->id);
+            // }
+
             // Step 3: Create Patient
             $patient = Patient::create([
                 'user_id' => $user->id,
                 'provider_id' => $request->provider_id,
+                'partner_family_name' => $request->partnerFamilyName,
+                'partner_given_name' => $request->partnerGivenName,
                 'external_contact_id' => $response_data['id'] ?? null,
                 'spruce_link' => $response_data['appURL'] ?? null,
                 'type' => $request->patient_type,
@@ -106,6 +115,10 @@ class PatientController extends Controller
                 'group_appointments' => $request->group_billing,
                 'individual_appointments' => $request->individual_billing,
                 'location' => $request->location,
+                'groupId' => $request->groupId,
+                'memberId' => $request->memberId,
+                'insurance_payer' => $request->insurancePayer,
+
             ]);
 
             // Step 4: Create Caregivers
@@ -122,8 +135,14 @@ class PatientController extends Controller
                 }
             }
 
+            $sprucePhoneNumber = $request->phoneNumbers[0]['value'] ?? null;
+            $messageKey = 'welcome';
 
+            if (empty($sprucePhoneNumber)) {
+                return response()->json(['message' => 'Phone number is missing'], 422);
+            }
 
+            $this->sendSpruceUpdateSmsMessage($sprucePhoneNumber, $messageKey);
             DB::commit();
 
             return $this->sendResponse(new PatientResource($patient), 'Patient record created both in local and spruce successfully!');
@@ -146,6 +165,8 @@ class PatientController extends Controller
         if (!$patient) {
             return $this->sendError('Patient with this external_contact_id not found.');
         }
+
+
         // $response = Http::withToken(env('SPRUCE_API_KEY'))
         //     ->get("https://api.sprucehealth.com/v1/contacts/{$id}");
 
@@ -274,7 +295,6 @@ class PatientController extends Controller
     // }
     public function update(StorePatientRequest $request, string $id)
     {
-
         DB::beginTransaction();
         try {
             // Step 1: Update Spruce contact
@@ -314,7 +334,9 @@ class PatientController extends Controller
             $patient->update([
                 'provider_id'           => $request->provider_id,
                 'type'                  => $request->patient_type,
-                'genderIdentity'       => $request->genderIdentity,
+                'partner_family_name'   => $request->partnerFamilyName,
+                'partner_given_name'     => $request->partnerGivenName,
+                'genderIdentity'        => $request->genderIdentity,
                 'referred_by'           => $request->referred_by,
                 'status'                => $request->status,
                 'wait_list'             => $request->wait_list,
@@ -322,6 +344,9 @@ class PatientController extends Controller
                 'individual_appointments' => $request->individual_billing,
                 'location'                 => $request->location,
                 'patient_add_from_spruce'  => false,
+                'groupId' => $request->groupId,
+                'memberId' => $request->memberId,
+                'insurance_payer' => $request->insurancePayer,
             ]);
 
 
@@ -377,13 +402,9 @@ class PatientController extends Controller
             }
 
             $this->sendSpruceUpdateSmsMessage($sprucePhoneNumber, $messageKey);
-
-
-
-
             DB::commit();
 
-            return $this->sendResponse(new PatientResource($patient), 'Patient record created both in local and Spruce successfully!');
+            return $this->sendResponse(new PatientResource($patient), 'Patient record updated both in local and Spruce successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -412,11 +433,9 @@ class PatientController extends Controller
                 ], $response->status());
             }
 
-
-
-
             // Delete local patient and associated user
             $user = $patient->user;
+            $phone_number = $user->phone;
             $patient->delete();
 
             if ($user) {
@@ -424,6 +443,15 @@ class PatientController extends Controller
             }
             // Delete local patient and associated caregiver
             $patient->caregivers->each->delete();
+
+            $sprucePhoneNumber = $phone_number ?? null;
+            $messageKey = 'patient_delete';
+
+            if (empty($sprucePhoneNumber)) {
+                return response()->json(['message' => 'Phone number is missing'], 422);
+            }
+
+            $this->sendSpruceUpdateSmsMessage($sprucePhoneNumber, $messageKey);
             DB::commit();
             return $this->sendResponse([], 'Patient deleted successfully from both Spruce and local database.');
         } catch (\Exception $e) {
@@ -431,6 +459,7 @@ class PatientController extends Controller
             return $this->sendError('Something went wrong.', ['error' => $e->getMessage()]);
         }
     }
+
     // public function getPatientConversations(string $patientId)
     // {
     //     $patient = Patient::find($patientId);
@@ -609,5 +638,25 @@ class PatientController extends Controller
                 'details' => $e->getMessage()
             ], 500);
         }
+    }
+
+
+    public function patient_search(Request $request)
+    {
+        $query = Patient::with('user');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('first_name')) {
+            $query->whereHas('user', function ($q) use ($request) {
+                $q->where('first_name', 'like', '%' . $request->first_name . '%');
+            });
+        }
+
+        $patients = $query->get();
+
+        return $this->sendResponse(PatientResource::collection($patients), 'Search results retrieved successfully.');
     }
 }

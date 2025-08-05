@@ -18,7 +18,7 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
-    protected $fillable = ['prefix', 'first_name', 'middle_name','family_name','last_name', 'full_name', 'name', 'email', 'google_id', 'email_verified_at', 'password', 'user_role', 'subscribe_status', 'phone', 'address', 'state', 'postal_code', 'country', 'date_of_birth', 'gender', 'age', 'is_active', 'last_login_at', 'profile_image', 'bio', 'social_media', 'city'];
+    protected $fillable = ['prefix', 'first_name', 'middle_name', 'family_name', 'last_name', 'full_name', 'name', 'email', 'google_id', 'email_verified_at', 'password', 'user_role', 'subscribe_status', 'phone', 'address', 'state', 'postal_code', 'country', 'date_of_birth', 'gender', 'age', 'is_active', 'last_login_at', 'profile_image', 'bio', 'social_media', 'city'];
 
 
     /**
@@ -40,9 +40,16 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'user_roles'); // 👈 specify custom pivot table
+    }
+
+
     public function patient()
     {
         return $this->hasOne(Patient::class);

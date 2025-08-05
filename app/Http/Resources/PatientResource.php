@@ -17,9 +17,12 @@ class PatientResource extends JsonResource
         return [
             'id' => $this->id,
             'external_contact_id' => $this->external_contact_id ?? [],
+            'partner_given_name' => $this->partner_given_name ?? null,
+            'partner_family_name' => $this->partner_family_name ?? null,
             'spruce_link' => $this->spruce_link ?? [],
             'conversations_link' => $this->conversations_link ?? [],
             'patient_add_from_spruce' => $this->patient_add_from_spruce ?? [],
+            // 'role' => $this->user->roles->pluck('name'),
             // 'user_id' => $this->user_id,
             // 'provider_id' => $this->provider_id,
             // 'mr' => $this->mr,
@@ -41,7 +44,6 @@ class PatientResource extends JsonResource
             'date_of_birth' => optional($this->user)->date_of_birth,
             'group_appointments' => $this->group_appointments,
             'individual_appointments' => $this->individual_appointments,
-            'location' => optional($this->user)->location,
             'email' => optional($this->user)->email,
             'given_name' => optional($this->user)->first_name,
             'family_name' => optional($this->user)->family_name,
@@ -49,6 +51,9 @@ class PatientResource extends JsonResource
             'phone' => optional($this->user)->phone,
             'gender' => optional($this->user)->gender,
             'genderIdentity' => $this->genderIdentity,
+            'insurancePayer' => $this->insurance_payer,
+            'groupId' => $this->groupId,
+            'memberId' => $this->memberId,
             // 'last_name' => $this->user->last_name ?? null,
             // 'full_name' => trim(($this->user->first_name ?? '') . ' ' . ($this->user->last_name ?? '')),
             'patient_type' => $this->type ?? [],
@@ -66,7 +71,7 @@ class PatientResource extends JsonResource
             // CareGiver array
             'caregivers' => $this->caregivers->map(function ($caregiver) {
                 return [
-                    'id'                   =>$caregiver['id'],
+                    'id'                   => $caregiver['id'],
                     'first_name'           => $caregiver['first_name'],
                     'last_name'            => $caregiver['last_name'],
                     'email'                => $caregiver['email'],

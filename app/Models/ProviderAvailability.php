@@ -11,6 +11,7 @@ class ProviderAvailability extends Model
 
     protected $fillable = [
         'provider_id',
+        'training_id',
         'title',
         'day_of_week',
         'slots',
@@ -31,5 +32,9 @@ class ProviderAvailability extends Model
     public function provider()
     {
         return $this->belongsTo(Provider::class);
+    }
+    public function training()
+    {
+        return $this->belongsTo(TrainingAndHiring::class, 'training_id', 'id');
     }
 }

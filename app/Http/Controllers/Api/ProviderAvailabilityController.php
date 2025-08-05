@@ -14,48 +14,71 @@ use App\Models\UserRole;
 use Illuminate\Http\Request;
 use App\Models\ProviderAvailability;
 use App\Models\ProviderAvailabilitySlot;
+use App\Models\TrainingAndHiring;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use SebastianBergmann\Diff\Exception;
+use App\Services\DailyFormService;
 
 class ProviderAvailabilityController extends Controller
 {
 
+    protected $dailyFormService;
 
+    public function __construct(DailyFormService $dailyFormService)
+    {
+        $this->dailyFormService = $dailyFormService;
+    }
     // 1. add the new Availability
     public function setAvailability(Request $request)
     {
 
         try {
             $validated = $request->validate([
-                'provider_id' => 'required|exists:providers,id',
+                // 'provider_id' => 'required|exists:providers,id',
                 'title' => 'required|string|max:255',
 
                 'slots.*.*.start_time' => 'required|date_format:H:i',
                 'slots.*.*.end_time' => 'required|date_format:H:i',
                 // 'slots.*.*.date' => 'required',
 
-                'type' => 'required|in:in_person,telehealth',
+                'type' => 'required|in:in_person,spruce',
                 'location' => 'nullable|string|max:255',
                 'recurrence' => 'nullable|string|max:255',
 
             ]);
+            // $user = Auth::user();
+            // if ($user->user_role == 'provider') {
+            //     // If this logged-in user is a provider, grab their provider ID:
+            //     $providerId = Provider::where('user_id', $user->id)->value('id');
+            // } else {
+            //     // Otherwise, fall back to taking provider_id from the incoming request:
+            //     $providerId = $request->input('provider_id');
+            // }
+            // // 2) Validate we got a provider ID
+            // if (! $providerId) {
+            //     return response()->json([
+            //         'message' => 'Failed to create availability.',
+            //         'error'   => 'Provider not found.',
+            //     ], 404);
+            // }
 
-            $providerId = Provider::where('user_id', Auth::id())->value('id');
-
-            if (!$providerId) {
-                return response()->json([
-                    'message' => 'Failed to create availability.',
-                    'error' => 'Provider does not exist in the system.',
-                ], 404);
-            }
+            // // 3) (Optional) Validate that that provider actually exists
+            // $exists = Provider::where('id', $providerId)->exists();
+            // if (! $exists) {
+            //     return response()->json([
+            //         'message' => 'Failed to create availability.',
+            //         'error'   => 'Invalid provider ID.',
+            //     ], 404);
+            // }
 
             DB::beginTransaction();
 
             // Create the Provider Availability
             $availability = ProviderAvailability::create([
-                'provider_id' => $providerId,
+                'provider_id' => $request->provider_id,
+                'training_id' => $request->training_id,
                 'title' => $request->title,
                 'type' => $request->type,
                 'location' => $request->location,
@@ -104,8 +127,11 @@ class ProviderAvailabilityController extends Controller
         try {
             $user = Auth::user();
             $providerId = Provider::where('user_id', $user->id)->value('id');
+            $trainingId = TrainingAndHiring::where('user_id', $user->id)->value('id');
             if ($providerId) {
                 $availabilities = ProviderAvailability::where('provider_id', $providerId)->with(['slots'])->get();
+            } elseif ($trainingId) {
+                $availabilities = ProviderAvailability::where('training_id', $trainingId)->with(['slots'])->get();
             } else {
                 $availabilities = ProviderAvailability::with(['slots'])->get();
             }
@@ -208,9 +234,10 @@ class ProviderAvailabilityController extends Controller
 
     public function updateAvailability(Request $request, $id)
     {
+
         $validated = $request->validate([
             'title' => 'sometimes|required|string|max:255',
-            'type' => 'sometimes|required|in:in_person,telehealth',
+            'type' => 'sometimes|required|in:in_person,spruce',
             'location' => 'nullable|string|max:255',
             'recurrence' => 'nullable|string|max:255',
             'slots.*.*.start_time' => 'required_with:slots|date_format:H:i',
@@ -278,9 +305,6 @@ class ProviderAvailabilityController extends Controller
         }
     }
 
-
-
-
     // public function getAllProvidersAvailability()
     // {
     //     $providerRoleIds = User::where('user_role', 'provider')->pluck('id');
@@ -320,4 +344,38 @@ class ProviderAvailabilityController extends Controller
     //     $data['options'] = ListOption::where('list_type', 'Type')->get();
     //     return $this->sendResponse($data, 'available options');
     // }
+
+    public function dailyForm(Request $request)
+    {
+
+        try {
+            $user = Auth::user();
+
+            if (!$user) {
+                return response()->json(['error' => 'Unauthenticated'], 401);
+            }
+
+            // Handle availability logic
+            $this->dailyFormService->handleDailyFormLogic($request, $user);
+
+            // You can store additional data if needed here (therapy, assessment, etc.)
+            return response()->json([
+                'success' => true,
+                'message' => 'Daily form handled successfully.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error processing daily form',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function daily_form_count()
+    {
+        $user = Auth::user();
+        return response(
+            ['login_count_today' => $user->daily_login_count]
+        );
+    }
 }

@@ -99,7 +99,7 @@ class SpruceWebhookController extends Controller
             'name' => 'My Laravel Webhook', // ✅ Required
             'eventTypes' => ['contact.created'],
         ]);
- 
+
         return $response->json();
     }
 }
